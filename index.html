@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Consolidado de Pagos · 100% Web</title>
+  <!-- Si tu red bloquea estos CDN, te paso versión offline -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#f5f7fb; --ink:#223049; --muted:#6b7a99; --brand:#2f6df6; --brand2:#7a5cff; --dark:#0e2a47;
+      --ok:#10b981; --warn:#f59e0b; --error:#ef4444; --card:#ffffff; --dash:#9db3ff;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0; font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; color:var(--ink); background:var(--bg)}
+    header{background:linear-gradient(180deg, var(--dark), #163b69); color:#fff; padding:28px 16px 22px; border-bottom-left-radius:14px; border-bottom-right-radius:14px; box-shadow:0 10px 24px rgba(6,24,44,.2)}
+    .wrap{max-width:980px; margin:0 auto}
+    .title{display:flex; align-items:center; gap:12px; font-weight:800; font-size:30px}
+    .title .icon{font-size:28px}
+    .subtitle{margin:6px 0 12px; color:#dbe6ff; font-weight:500}
+    .badge{display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.12); color:#fffb; border:1px solid rgba(255,255,255,.2); padding:6px 10px; border-radius:999px; font-size:13px}
+
+    main{max-width:980px; margin:22px auto; padding:0 16px}
+    .callout{background:#e9f2ff; border:1px solid #cfe0ff; border-left:6px solid var(--brand); color:#0f2b5c; border-radius:12px; padding:14px 16px; margin-bottom:18px}
+    .callout h3{margin:0 0 6px; font-size:16px}
+    .callout ol{margin:0 0 0 18px; padding:0}
+
+    .actions{display:flex; justify-content:center; margin:16px 0}
+    .btn{appearance:none; border:0; cursor:pointer; padding:12px 18px; border-radius:999px; font-weight:700; color:#fff; box-shadow:0 6px 16px rgba(47,109,246,.3)}
+    .btn-primary{background:linear-gradient(135deg, var(--brand), var(--brand2))}
+    .btn.secondary{background:#fff; color:#1f49d8; border:1px solid var(--brand); box-shadow:none}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    .dropzone{position:relative; background:var(--card); border:2px dashed var(--dash); border-radius:14px; min-height:150px; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px; color:var(--muted)}
+    .dropzone.hover{background:#f4f7ff}
+    .dropzone .folder{font-size:30px; display:block; margin-bottom:8px}
+    .dropzone input[type=file].overlay{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%}
+
+    .grid-ctn{display:grid; gap:18px}
+    .filelist{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px}
+    .pill{background:#eef3ff; border:1px dashed var(--dash); color:#334; padding:6px 10px; border-radius:999px; font-size:12px}
+
+    .footer-actions{display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; margin-top:16px}
+    #download{display:none}
+    .status{margin-top:12px; color:var(--muted); text-align:center}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .error{color:var(--error)}
+
+    .indicator{display:none; align-items:center; gap:8px; background:#fff; color:#1f49d8;
+               border:1px solid var(--brand); border-radius:999px; padding:6px 10px;
+               font-size:13px; font-weight:700; box-shadow:0 4px 10px rgba(47,109,246,.15)}
+    .spin{width:14px;height:14px;border:2px solid var(--brand);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .sel-indicator{display:none; align-items:center; gap:8px; background:#eef3ff; color:#213;
+                   border:1px dashed var(--dash); border-radius:999px; padding:6px 10px;
+                   font-size:13px; font-weight:700; width:fit-content; margin:6px auto 0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title"><span class="icon">🧾</span> Consolidado de Pagos</div>
+      <div class="subtitle">Procesador Automático de Archivos ZIP Bancarios</div>
+      <div class="badge">✨ Creado por: <strong style="font-weight:800">JAVZ</strong> ✨</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid-ctn">
+      <section class="callout">
+        <h3>📋 Instrucciones:</h3>
+        <ol>
+          <li>Selecciona o arrastra tus archivos ZIP del banco</li>
+          <li>Proc. 1: <strong>Procesar Archivos</strong> → Excel consolidado</li>
+          <li>Proc. 2: <strong>Renombrar ZIPs</strong> → ZIP con nombre <code>LOTE_FECHA IBK.zip</code></li>
+        </ol>
+      </section>
+
+      <div class="actions">
+        <label for="file" class="btn btn-primary">📂 Seleccionar Archivos ZIP</label>
+        <input id="file" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple style="display:none" />
+      </div>
+
+      <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí">
+        <input id="file-overlay" class="overlay" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple />
+        <div>
+          <span class="folder">📁</span>
+          <div>Arrastra y suelta archivos ZIP aquí (o haz clic)</div>
+        </div>
+      </section>
+
+      <ul id="filelist" class="filelist"></ul>
+      <div id="selIndicator" class="sel-indicator">0 ZIPs seleccionados</div>
+
+      <div class="footer-actions">
+        <button id="btn" class="btn btn-primary">🚀 Procesar Archivos</button>
+        <button id="btn-rename" class="btn btn-primary">📝 Renombrar ZIPs</button>
+        <button id="clear" class="btn secondary">🧹 Limpiar</button>
+        <a id="download" class="btn secondary" href="#" download>⬇️ Descargar resultado</a>
+        <div id="procIndicator" class="indicator" aria-live="polite">
+          <span class="spin" aria-hidden="true"></span>
+          <span id="procText">Procesando 0/0 ZIPs</span>
+        </div>
+      </div>
+
+      <div id="status" class="status">
+        Proc. 1: TRABAJADOR, NOMBRES, CUENTA, MONEDA,MONTO, LOTE, FECHA, BANCO.<br>
+        Proc. 2: renombra y **guarda localmente** (pregunta carpeta en cada ejecución).
+      </div>
+    </div>
+  </main>
+
+  <script>
+  // ===== UI =====
+  const fileInput   = document.getElementById('file');
+  const fileOverlay = document.getElementById('file-overlay');
+  const drop        = document.getElementById('drop');
+  const list        = document.getElementById('filelist');
+  const btn         = document.getElementById('btn');
+  const btnRename   = document.getElementById('btn-rename');
+  const clearBtn    = document.getElementById('clear');
+  const statusEl    = document.getElementById('status');
+  const downloadEl  = document.getElementById('download');
+
+  const procIndicator = document.getElementById('procIndicator');
+  const procText      = document.getElementById('procText');
+  const selIndicator  = document.getElementById('selIndicator');
+
+  let selectedFiles = [];
+  let indicatorLabel = 'Procesando';
+
+  function fmtBytes(n){ if(!n && n!==0) return ""; const k=1024, s=['B','KB','MB','GB']; const i=Math.floor(Math.log(n)/Math.log(k)); return (n/Math.pow(k,i)).toFixed(2)+' '+s[i]; }
+
+  function renderList(){
+    list.innerHTML='';
+    selectedFiles.forEach(f=>{
+      const li=document.createElement('li');
+      li.className='pill';
+      li.textContent=`${f.name} (${fmtBytes(f.size)})`;
+      list.appendChild(li);
+    });
+    updateSelectedCounter();
+  }
+  function updateSelectedCounter(){
+    const n = selectedFiles.length;
+    if(n>0){
+      selIndicator.style.display='inline-flex';
+      selIndicator.textContent = `${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}`;
+      setStatus(`${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}.`, 'ok');
+    }else{
+      selIndicator.style.display='none';
+      selIndicator.textContent='';
+      setStatus('Listo para procesar o renombrar ZIPs.');
+    }
+  }
+  function setStatus(msg, cls){ statusEl.textContent=msg; statusEl.className='status'+(cls?' '+cls:''); }
+  function enableUI(en){ btn.disabled=!en; btnRename.disabled=!en; fileInput.disabled=!en; fileOverlay.disabled=!en; clearBtn.disabled=!en; }
+
+  function addFiles(files){
+    const map = new Map(selectedFiles.map(f => [f.name+'|'+f.size, true]));
+    const incoming = [...files].filter(f => f && f.name && f.size && f.name.toLowerCase().endsWith('.zip'));
+    let added = 0;
+    for(const f of incoming){
+      const key = f.name+'|'+f.size;
+      if(!map.has(key)){ selectedFiles.push(f); map.set(key,true); added++; }
+    }
+    renderList();
+    if(added===0 && incoming.length>0){ setStatus('Los ZIP seleccionados ya estaban en la lista.', 'warn'); }
+    if(incoming.length===0){ setStatus('Selecciona archivos con extensión .zip', 'warn'); }
+  }
+
+  ['dragover','dragenter'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('hover'); }));
+  ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('hover'); }));
+  drop.addEventListener('click', ()=> fileInput.click());
+  drop.addEventListener('drop', e=> addFiles(e.dataTransfer.files));
+  fileInput.addEventListener('change', e=>{ addFiles(e.target.files); fileInput.value=''; });
+  fileOverlay.addEventListener('change', e=>{ addFiles(e.target.files); fileOverlay.value=''; });
+
+  clearBtn.addEventListener('click', ()=>{
+    selectedFiles=[]; renderList(); downloadEl.style.display='none'; hideIndicator();
+    setStatus('Listo para procesar o renombrar ZIPs.');
+  });
+
+  // ===== Utilidades =====
+  const BANCO_FIJO = 'IBK';
+  function removeAccents(str){ return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+  function normaliza(x){ if(x==null) return ''; const s=String(x).replace(/\u00A0/g,' ').replace(/[\r\n]+/g,' ').trim(); return removeAccents(s).toLowerCase(); }
+  function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+  function parseDecimal(txt){
+    if(!txt) return 0; let s=String(txt).replace(/[^\d\.,]/g,'');
+    if(!s) return 0;
+    const p=Math.max(s.lastIndexOf('.'), s.lastIndexOf(','));
+    if(p>0){ const intp=s.slice(0,p).replace(/\D/g,''); const decp=s.slice(p+1).replace(/\D/g,''); s=(intp||'0')+'.'+(decp||'0'); }
+    else s=s.replace(/\D/g,'');
+    const v=Number(s); return isFinite(v)? v:0;
+  }
+  function parseBenef(raw){
+    const tOrig=String(raw||'').replace(/\n/g,' ').trim();
+    const runs=tOrig.match(/\d+/g)||[]; const id=runs.reduce((a,b)=>(a.length>=b.length?a:b), "");
+    let nombre=tOrig; const idxCE=nombre.toUpperCase().indexOf(' CE ');
+    if(idxCE>=0){ nombre=nombre.slice(0,idxCE); } else { const idxDNI=nombre.toUpperCase().indexOf(' DNI '); if(idxDNI>=0) nombre=nombre.slice(0,idxDNI); }
+    nombre=nombre.replace(/dni[:\s]*\d+/ig,'').replace(/\bXXX\b/ig,'').replace(/\s{2,}/g,' ').trim();
+    return {nombre, id};
+  }
+  function extractCabecera(rows){
+    let fecha_envio='', nombre_lote='', moneda_default='';
+    const maxR=Math.min(rows.length,60);
+    for(let r=0;r<maxR;r++){
+      const row=rows[r]||[]; const maxC=Math.min(row.length,30);
+      for(let c=0;c<maxC;c++){
+        const t=normaliza(row[c]); if(!t) continue;
+        if(t.includes('programacion de envio')){
+          for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
+          if(!fecha_envio && r+1<rows.length){
+            for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
+          }
+        }
+        if(t.includes('nombre de lote')){
+          for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ nombre_lote=String(val).trim(); break; } }
+          if(!nombre_lote && r+1<rows.length){
+            for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ nombre_lote=String(val).trim(); break; } }
+          }
+        }
+        if(t.includes('datos de cargo')){
+          let texto=''; for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
+          if(!texto && r+1<rows.length){
+            for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
+          }
+          if(texto){ moneda_default = normaliza(texto).includes('soles') ? 'Soles' : 'Dólares'; }
+        }
+      }
+    }
+    return {fecha_envio, nombre_lote, moneda_default};
+  }
+  function encontrarEncabezados(rows){
+    const maxR=Math.min(rows.length,200);
+    for(let r=0;r<maxR;r++){
+      const row=rows[r]||[]; let cBenef=-1,cCta=-1,cMto=-1,cEst=-1;
+      for(let c=0;c<row.length;c++){
+        const t=normaliza(row[c]); if(!t) continue;
+        if(cBenef<0 && t.includes('beneficiario')) cBenef=c;
+        if(cCta  <0 && t.includes('cuenta'))       cCta=c;
+        if(cMto  <0 && t.includes('monto'))        cMto=c;
+        if(cEst  <0 && t.includes('estado'))       cEst=c;
+      }
+      if(cBenef>=0 && cCta>=0 && cMto>=0){ return {headerRow:r, cBenef, cCta, cMto, cEst}; }
+    }
+    return {headerRow:25, cBenef:2, cCta:13, cMto:17, cEst:22};
+  }
+  function ajustarColumna(rows, hdrRow, approxC){
+    const lastR=rows.length; if(approxC==null) return approxC;
+    for(let c=Math.max(0,approxC-3); c<=approxC+3; c++){
+      for(let r=hdrRow+1; r<=Math.min(hdrRow+10,lastR-1); r++){
+        const val=rows[r]?.[c]; if(val!=null && String(val).trim()!=='') return c;
+      }
+    }
+    return approxC;
+  }
+  function esHeaderRow(row){
+    if(!row) return false;
+    const vals=(row||[]).map(normaliza);
+    return vals.some(v=>v.includes('beneficiario')) && vals.some(v=>v.includes('monto')) && vals.some(v=>v.includes('cuenta'));
+  }
+
+  // ===== Proc. 1: Consolidar Excel =====
+  function procesarSheet(ws){
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+    if(!rows||!rows.length) return [];
+    const {fecha_envio, nombre_lote, moneda_default}=extractCabecera(rows);
+    let {headerRow,cBenef,cCta,cMto,cEst}=encontrarEncabezados(rows);
+    cBenef=ajustarColumna(rows,headerRow,cBenef); cCta=ajustarColumna(rows,headerRow,cCta); cMto=ajustarColumna(rows,headerRow,cMto); if(cEst>=0) cEst=ajustarColumna(rows,headerRow,cEst);
+
+    let startR=-1; const lastR=rows.length;
+    for(let r=headerRow+1; r<lastR; r++){
+      const b=rows[r]?.[cBenef]; const cta=rows[r]?.[cCta]; const mto=rows[r]?.[cMto]; const est=(cEst>=0?rows[r]?.[cEst]:'');
+      if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''))){ startR=r; break; }
+    }
+    if(startR<0) return [];
+
+    const out=[]; let vacias=0;
+    for(let r=startR; r<lastR; r++){
+      const row=rows[r]||[]; if(esHeaderRow(row)) break;
+      const benef=String(row[cBenef]??'').trim();
+      const cta  =String(row[cCta]??'').trim();
+      const mto  =String(row[cMto]??'').trim();
+      const est  =cEst>=0? String(row[cEst]??'').trim(): '';
+
+      if(!benef && !cta && !mto && !est){ vacias++; if(vacias>=20) break; else continue; } else { vacias=0; }
+
+      const {nombre,id}=parseBenef(benef);
+      out.push([
+        onlyDigits(id),
+        nombre,
+        onlyDigits(cta),
+        (moneda_default || 'Dólares'),
+        parseDecimal(mto),
+        nombre_lote || '',
+        (fecha_envio || ''),
+        'IBK'
+      ]);
+    }
+    return out;
+  }
+  async function procesarZipFile(file){
+    const zip=await JSZip.loadAsync(file);
+    const entries=Object.values(zip.files).filter(f=> f.name.toLowerCase().endsWith('.xlsx'));
+    const allRows=[];
+    for(let i=0;i<entries.length;i++){
+      const e=entries[i];
+      const data=await e.async('arraybuffer');
+      const wb=XLSX.read(data,{type:'array'});
+      for(const sname of wb.SheetNames){
+        const ws=wb.Sheets[sname];
+        allRows.push(...procesarSheet(ws));
+      }
+    }
+    return allRows;
+  }
+
+  // ===== Proc. 2: Renombrar ZIPs =====
+  function sanitizeFilename(name){
+    return String(name||'').replace(/[<>:"/\\|?*]+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0,120);
+  }
+  async function extraerLoteFechaDeZip(file){
+    try{
+      const zip = await JSZip.loadAsync(file);
+      const xlsx = Object.values(zip.files).find(f=> f.name.toLowerCase().endsWith('.xlsx'));
+      if(!xlsx) return null;
+      const data = await xlsx.async('arraybuffer');
+      const wb = XLSX.read(data,{type:'array'});
+      let lote='', fecha='';
+      for(const sname of wb.SheetNames){
+        const ws = wb.Sheets[sname];
+        const rows = XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+        const {fecha_envio, nombre_lote} = extractCabecera(rows);
+        if(!lote && nombre_lote) lote = nombre_lote;
+        if(!fecha && fecha_envio) fecha = fecha_envio;
+        if(lote && fecha) break;
+      }
+      if(!lote && !fecha) return null;
+      const loteOk = sanitizeFilename(lote || 'SIN_LOTE');
+      const fecha8 = (fecha||'').replace(/\D/g,'').padEnd(8,'0').slice(0,8);
+      return { lote: loteOk, fecha8 };
+    }catch(e){
+      console.warn('No se pudo leer ZIP para renombrar:', file.name, e);
+      return null;
+    }
+  }
+
+  // === Elegir carpeta en CADA ejecución ===
+  async function pickDirectoryThisRun(){
+    if('showDirectoryPicker' in window){
+      try{ return await window.showDirectoryPicker({id:'zip-output'}); }
+      catch(_){ return null; }
+    }
+    return null;
+  }
+  async function saveZipToDir(dirHandle, newName, file){
+    const fh = await dirHandle.getFileHandle(newName, {create:true});
+    const w  = await fh.createWritable();
+    await w.write(await file.arrayBuffer());
+    await w.close();
+  }
+
+  async function renombrarYDescargarZIPs(){
+    if(!selectedFiles.length){ setStatus('Selecciona uno o más ZIP.', 'warn'); return; }
+    enableUI(false); downloadEl.style.display='none';
+    showIndicator(selectedFiles.length, 'Renombrando');
+
+    // Siempre preguntar carpeta al iniciar el renombrado
+    const dirHandle = await pickDirectoryThisRun();
+    const useDir = !!dirHandle;
+
+    let renombrados = 0, sinCambios = 0, guardadosLocal = 0, viaDescarga = 0;
+
+    for(let i=0;i<selectedFiles.length;i++){
+      const f = selectedFiles[i];
+      updateIndicator(i+1, selectedFiles.length);
+
+      const info = await extraerLoteFechaDeZip(f);
+      const newName = info ? `${info.lote}_${info.fecha8} ${BANCO_FIJO}.zip` : f.name;
+      if(info) renombrados++; else sinCambios++;
+
+      if(useDir){
+        try{
+          await saveZipToDir(dirHandle, newName, f);
+          guardadosLocal++;
+        }catch{
+          // Fallback por si falla el FS Access
+          const url = URL.createObjectURL(f);
+          const a = document.createElement('a');
+          a.href = url; a.download = newName;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(()=> URL.revokeObjectURL(url), 30000);
+          viaDescarga++;
+        }
+      }else{
+        // Fallback: descarga tradicional
+        const url = URL.createObjectURL(f);
+        const a = document.createElement('a');
+        a.href = url; a.download = newName;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 30000);
+        viaDescarga++;
+      }
+
+      await new Promise(res=> setTimeout(res, 120));
+    }
+
+    hideIndicator();
+    enableUI(true);
+    const msg =
+      `Renombrado: ${renombrados} con nuevo nombre, ${sinCambios} sin cambios. ` +
+      (guardadosLocal ? `Guardados en carpeta: ${guardadosLocal}. ` : '') +
+      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.` : '');
+    setStatus(msg, 'ok');
+  }
+
+  // ===== Indicador (común) =====
+  function showIndicator(total, label='Procesando'){
+    indicatorLabel = label;
+    if(!total){ procIndicator.style.display='none'; return; }
+    procIndicator.style.display='inline-flex';
+    const suf = total===1 ? 'ZIP' : 'ZIPs';
+    procText.textContent = `${indicatorLabel} 0/${total} ${suf}`;
+  }
+  function updateIndicator(current, total){
+    const suf = total===1 ? 'ZIP' : 'ZIPs';
+    procText.textContent = `${indicatorLabel} ${current}/${total} ${suf}`;
+  }
+  function hideIndicator(){ procIndicator.style.display='none'; }
+
+  // ===== Ejecutores =====
+  async function runConsolidado(){
+    if(!selectedFiles.length){ setStatus('Selecciona uno o más ZIP.', 'warn'); return; }
+    enableUI(false); downloadEl.style.display='none';
+    showIndicator(selectedFiles.length, 'Procesando');
+    setStatus(`Iniciando procesamiento de ${selectedFiles.length} ${selectedFiles.length===1?'ZIP':'ZIPs'}...`);
+
+    try{
+      let consolidated=[];
+      for(let i=0;i<selectedFiles.length;i++){
+        const f=selectedFiles[i];
+        updateIndicator(i+1, selectedFiles.length);
+        setStatus(`Procesando ZIP ${i+1}/${selectedFiles.length}: ${f.name}`);
+        const rows=await procesarZipFile(f);
+        consolidated = consolidated.concat(rows);
+      }
+      if(!consolidated.length){ setStatus('No se encontraron filas en los ZIP seleccionados.', 'warn'); hideIndicator(); return; }
+
+      const headers=['TRABAJADOR','NOMBRES','CUENTA','MONEDA','MONTO','LOTE','FECHA','BANCO'];
+      const aoa=[headers, ...consolidated];
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+      for(let r=1; r<aoa.length; r++){
+        const addr=XLSX.utils.encode_cell({r, c:4});
+        if(ws[addr]) ws[addr].z='0.00';
+      }
+      const textCols=[0,1,2,3,5,6,7];
+      for(const c of textCols){
+        for(let r=1; r<aoa.length; r++){
+          const addr=XLSX.utils.encode_cell({r, c});
+          const cell=ws[addr];
+          if(cell){ cell.t='s'; cell.z='@'; }
+        }
+      }
+
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'FORMATO');
+      const fname=`Consolidado_IBK_${new Date().toISOString().slice(0,16).replace(/[-:T]/g,'')}.xlsx`;
+      setStatus(`¡Listo! Filas consolidadas: ${consolidated.length}.`, 'ok');
+
+      const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+      const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url=URL.createObjectURL(blob);
+      downloadEl.href=url; downloadEl.download=fname; downloadEl.style.display='inline-block';
+      setTimeout(()=>{ try{ downloadEl.click(); }catch(e){} },50);
+      setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(e){} },60000);
+    }catch(err){
+      console.error(err);
+      setStatus('Ocurrió un error durante el procesamiento: '+(err&&err.message?err.message:err),'error');
+    }finally{
+      hideIndicator();
+      enableUI(true);
+    }
+  }
+
+  document.getElementById('btn').addEventListener('click', runConsolidado);
+  btnRename.addEventListener('click', renombrarYDescargarZIPs);
+
+  if(!window.XLSX || !window.JSZip){
+    setStatus('No se cargaron las librerías necesarias (XLSX/JSZip). Si tu red bloquea CDNs, pídeme la versión offline.', 'error');
+  }
+  </script>
+</body>
+</html>
