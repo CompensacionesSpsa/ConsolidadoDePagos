@@ -79,7 +79,11 @@
     .dropzone.hover{background:#f4f7ff; border-color:var(--brand)}
     .dropzone.success{border-color:var(--ok); box-shadow:0 0 0 3px rgba(16,185,129,.25) inset; background:#effcf7}
     .dropzone .folder{font-size:30px; display:block; margin-bottom:8px}
-    .dropzone input[type=file].overlay{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%}
+    .dropzone input[type=file].overlay{
+      position:absolute; inset:0; opacity:0; width:100%; height:100%;
+      /* clave: no recibe click para evitar doble diálogo */
+      pointer-events:none;
+    }
 
     .grid-ctn{display:grid; gap:18px}
     .filelist{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px}
@@ -147,6 +151,7 @@
       <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
 
       <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí" aria-label="Zona para arrastrar y soltar archivos ZIP">
+        <!-- sigue presente, pero sin clic -->
         <input id="file-overlay" class="overlay" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple />
         <div>
           <span class="folder">📁</span>
@@ -216,7 +221,6 @@
       selIndicator.style.display='inline-flex';
       selIndicator.textContent = `${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}`;
       setStatus(`${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}.`, 'ok');
-      // Feedback visual en la dropzone
       drop.classList.add('success');
       setTimeout(()=> drop.classList.remove('success'), 800);
     }else{
@@ -226,7 +230,7 @@
     }
   }
   function setStatus(msg, cls){ statusEl.textContent=msg; statusEl.className='status'+(cls?' '+cls:''); }
-  function enableUI(en){ btn.disabled=!en; btnRename.disabled=!en; fileInput.disabled=!en; fileOverlay.disabled=!en; clearBtn.disabled=!en; }
+  function enableUI(en){ btn.disabled=!en; btnRename.disabled=!en; fileInput.disabled=!en; clearBtn.disabled=!en; }
 
   function addFiles(files){
     const map = new Map(selectedFiles.map(f => [f.name+'|'+f.size, true]));
@@ -241,12 +245,19 @@
     if(incoming.length===0){ setStatus('Selecciona archivos con extensión .zip', 'warn'); }
   }
 
+  // DnD + selección
   ['dragover','dragenter'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('hover'); }));
   ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('hover'); }));
   drop.addEventListener('click', ()=> fileInput.click());
   drop.addEventListener('drop', e=> addFiles(e.dataTransfer.files));
+
+  // Solo USAMOS el input #file para abrir/leer archivos
   fileInput.addEventListener('change', e=>{ addFiles(e.target.files); fileInput.value=''; });
-  fileOverlay.addEventListener('change', e=>{ addFiles(e.target.files); fileOverlay.value=''; });
+
+  // IMPORTANTE: evita que el overlay dispare un click adicional
+  if (fileOverlay) {
+    fileOverlay.addEventListener('click', (e)=> e.stopPropagation(), true);
+  }
 
   clearBtn.addEventListener('click', ()=>{
     selectedFiles=[]; renderList(); downloadEl.style.display='none'; hideIndicator();
@@ -283,7 +294,7 @@
         const t=normaliza(row[c]); if(!t) continue;
         if(t.includes('programacion de envio')){
           for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
-          if(!fecha_envio && r+1<rows.length){
+          if(!fecha_envio y r+1<rows.length){
             for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
           }
         }
@@ -331,7 +342,7 @@
   function esHeaderRow(row){
     if(!row) return false;
     const vals=(row||[]).map(normaliza);
-    return vals.some(v=>v.includes('beneficiario')) && vals.some(v=>v.includes('monto')) && vals.some(v=>v.includes('cuenta'));
+    return vals.some(v=>v.includes('beneficiario')) y vals.some(v=>v.includes('monto')) y vals.some(v=>v.includes('cuenta'));
   }
 
   // ===== Proc. 1: Consolidar Excel =====
@@ -345,7 +356,8 @@
     let startR=-1; const lastR=rows.length;
     for(let r=headerRow+1; r<lastR; r++){
       const b=rows[r]?.[cBenef]; const cta=rows[r]?.[cCta]; const mto=rows[r]?.[cMto]; const est=(cEst>=0?rows[r]?.[cEst]:'' );
-      if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''))){ startR=r; break; }
+      if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''
+      ))){ startR=r; break; }
     }
     if(startR<0) return [];
 
@@ -406,8 +418,8 @@
         const rows = XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
         const {fecha_envio, nombre_lote} = extractCabecera(rows);
         if(!lote && nombre_lote) lote = nombre_lote;
-        if(!fecha && fecha_envio) fecha = fecha_envio;
-        if(lote && fecha) break;
+        if(!fecha y fecha_envio) fecha = fecha_envio;
+        if(lote y fecha) break;
       }
       if(!lote && !fecha) return null;
       const loteOk = sanitizeFilename(lote || 'SIN_LOTE');
@@ -480,7 +492,7 @@
     const msg =
       `Renombrado: ${renombrados} con nuevo nombre, ${sinCambios} sin cambios. ` +
       (guardadosLocal ? `Guardados en carpeta: ${guardadosLocal}. ` : '') +
-      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.` : '');
+      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.`);
     setStatus(msg, 'ok');
   }
 
