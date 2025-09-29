@@ -4,9 +4,36 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Consolidado de Pagos · 100% Web</title>
-  <!-- Si tu red bloquea estos CDN, te paso versión offline -->
+
+  <!-- SEO básico -->
+  <meta name="description" content="Consolidado de Pagos 100% web: procesa ZIPs bancarios y genera Excel de forma automática. Creado por JAVZ.">
+  <link rel="canonical" href="https://JAVZ08.github.io/">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Consolidado de Pagos · JAVZ">
+  <meta property="og:description" content="Procesador automático de ZIPs bancarios → Excel consolidado. 100% web.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://JAVZ08.github.io/">
+  <meta property="og:image" content="https://JAVZ08.github.io/og-cover.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Consolidado de Pagos · JAVZ">
+  <meta name="twitter:description" content="Procesa ZIPs bancarios y genera Excel consolidado · 100% web">
+  <meta name="twitter:image" content="https://JAVZ08.github.io/og-cover.png">
+
+  <!-- Robots -->
+  <meta name="robots" content="index,follow">
+
+  <!-- Marca y PWA -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="theme-color" content="#0e2a47">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Librerías CDN (sin cambios a tu lógica) -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg:#f5f7fb; --ink:#223049; --muted:#6b7a99; --brand:#2f6df6; --brand2:#7a5cff; --dark:#0e2a47;
@@ -27,10 +54,11 @@
     .callout ol{margin:0 0 0 18px; padding:0}
 
     .actions{display:flex; justify-content:center; margin:16px 0}
-    .btn{appearance:none; border:0; cursor:pointer; padding:12px 18px; border-radius:999px; font-weight:700; color:#fff; box-shadow:0 6px 16px rgba(47,109,246,.3)}
+    .btn{appearance:none; border:0; cursor:pointer; padding:12px 18px; border-radius:999px; font-weight:700; color:#fff; box-shadow:0 6px 16px rgba(47,109,246,.3); min-height:44px;}
     .btn-primary{background:linear-gradient(135deg, var(--brand), var(--brand2))}
     .btn.secondary{background:#fff; color:#1f49d8; border:1px solid var(--brand); box-shadow:none}
     .btn:disabled{opacity:.6; cursor:not-allowed}
+    .btn:focus, .dropzone:focus-within { outline: 3px solid #7a5cff55; outline-offset: 2px; border-radius: 12px; }
 
     .dropzone{position:relative; background:var(--card); border:2px dashed var(--dash); border-radius:14px; min-height:150px; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px; color:var(--muted)}
     .dropzone.hover{background:#f4f7ff}
@@ -55,6 +83,16 @@
     .sel-indicator{display:none; align-items:center; gap:8px; background:#eef3ff; color:#213;
                    border:1px dashed var(--dash); border-radius:999px; padding:6px 10px;
                    font-size:13px; font-weight:700; width:fit-content; margin:6px auto 0}
+
+    /* ——— MODO OSCURO AUTOMÁTICO (no rompe tu paleta) ——— */
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0b1220; --ink:#e7ecf8; --muted:#a9b6d3; --card:#0f1a2d; --dash:#4a67b6; }
+      header{ background: linear-gradient(180deg, #0b284a, #0a1f3b); }
+      .dropzone{ border-color:#4a67b6; }
+      .callout{ background:#0f1f3f; border-color:#2a4ea3; color:#d7e3ff; }
+      .btn.secondary{ background:#132646; color:#cfe0ff; border-color:#3d66da; }
+      .sel-indicator{ background:#101e3a; color:#d7e3ff; border-color:#4a67b6; }
+    }
   </style>
 </head>
 <body>
@@ -75,6 +113,21 @@
           <li>Proc. 1: <strong>Procesar Archivos</strong> → Excel consolidado</li>
           <li>Proc. 2: <strong>Renombrar ZIPs</strong> → ZIP con nombre <code>LOTE_FECHA IBK.zip</code></li>
         </ol>
+      </section>
+
+      <noscript>
+        <div class="callout" style="margin-top:-6px">
+          Necesitas habilitar JavaScript para procesar y renombrar ZIPs.
+        </div>
+      </noscript>
+
+      <section class="callout" aria-live="polite" style="margin-top:-6px">
+        <h3 style="margin:0 0 6px">ℹ️ Consideraciones</h3>
+        <ul style="margin:0 0 0 18px">
+          <li>Solo ZIPs con reportes .xlsx internos</li>
+          <li>No sube archivos a servidores: todo corre en tu navegador</li>
+          <li>Si te pide carpeta al renombrar, es para guardar local (File System Access API)</li>
+        </ul>
       </section>
 
       <div class="actions">
@@ -106,10 +159,14 @@
 
       <div id="status" class="status">
         Proc. 1: TRABAJADOR, NOMBRES, CUENTA, MONEDA,MONTO, LOTE, FECHA, BANCO.<br>
-        Proc. 2: renombra y **guarda localmente** (pregunta carpeta en cada ejecución).
+        Proc. 2: renombra y <b>guarda localmente</b> (pregunta carpeta en cada ejecución).
       </div>
     </div>
   </main>
+
+  <footer style="text-align:center; color:#6b7a99; font-size:12px; margin:30px 0 18px">
+    © 2025 JAVZ · Todos los derechos reservados · Versión 1.0.0
+  </footer>
 
   <script>
   // ===== UI =====
@@ -379,7 +436,7 @@
       updateIndicator(i+1, selectedFiles.length);
 
       const info = await extraerLoteFechaDeZip(f);
-      const newName = info ? `${info.lote}_${info.fecha8} ${BANCO_FIJO}.zip` : f.name;
+      const newName = info ? `${info.lote}_${info.fecha8} IBK.zip` : f.name;
       if(info) renombrados++; else sinCambios++;
 
       if(useDir){
@@ -489,9 +546,14 @@
   document.getElementById('btn').addEventListener('click', runConsolidado);
   btnRename.addEventListener('click', renombrarYDescargarZIPs);
 
+  // Alerta visible si las libs no cargan (tu status ya lo muestra; esto es extra)
   if(!window.XLSX || !window.JSZip){
-    setStatus('No se cargaron las librerías necesarias (XLSX/JSZip). Si tu red bloquea CDNs, pídeme la versión offline.', 'error');
+    alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pídenos la versión offline.');
   }
   </script>
+
+  <!-- Métricas (privado, sin cookies) -->
+  <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+  <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
 </body>
 </html>
