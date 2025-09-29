@@ -139,9 +139,16 @@
       </noscript>
 
       <div class="actions">
-        <label for="file" class="btn btn-primary">📂 Seleccionar Archivos ZIP</label>
-        <input id="file" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple style="display:none" />
-      </div>
+  <button id="choose" type="button" class="btn btn-primary">📂 Seleccionar Archivos ZIP</button>
+  <input
+    id="file"
+    type="file"
+    accept=".zip,application/zip,application/x-zip-compressed,application/x-zip,multipart/x-zip"
+    multiple
+    style="display:none"
+    onchange="handleFileSelect(event)"
+  />
+</div>
 
       <!-- Nota de seguridad -->
       <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
@@ -195,7 +202,27 @@
   const procIndicator = document.getElementById('procIndicator');
   const procText      = document.getElementById('procText');
   const selIndicator  = document.getElementById('selIndicator');
+    
+  // Botón visible que abre el selector
+const chooseBtn = document.getElementById('choose');
+if (chooseBtn && fileInput) {
+  chooseBtn.addEventListener('click', () => fileInput.click());
+}
 
+// Fallback robusto: si por cualquier motivo no se adjuntó el listener con addEventListener,
+// este handler en línea (definido en window) se ejecuta al cambiar el input y llama a addFiles.
+window.handleFileSelect = function (e) {
+  try {
+    if (e && e.target && e.target.files) {
+      addFiles(e.target.files);
+      e.target.value = ''; // permite volver a seleccionar los mismos archivos
+    }
+  } catch (err) {
+    console.error('Error en handleFileSelect:', err);
+    setStatus('Ocurrió un error al leer los ZIPs. Revisa la consola del navegador.', 'error');
+  }
+};
+  
   let selectedFiles = [];
   let indicatorLabel = 'Procesando';
 
