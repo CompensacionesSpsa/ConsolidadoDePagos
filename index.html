@@ -3,47 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- AQUÍ pegas los meta tags -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+  <!-- Anti-caché básico -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Consolidado de Pagos · 100% Web</title>
 
-<!-- SEO básico -->
-<meta name="description" content="Consolidado de Pagos 100% web: procesa ZIPs bancarios y genera Excel de forma automática. Creado por JAVZ.">
-<link rel="canonical" href="https://compensacionesspsa.github.io/ConsolidadoDePagos/">
+  <!-- SEO básico -->
+  <meta name="description" content="Consolidado de Pagos 100% web: procesa ZIPs bancarios y genera Excel de forma automática. Creado por JAVZ.">
+  <link rel="canonical" href="https://compensacionesspsa.github.io/ConsolidadoDePagos/">
 
-<!-- Open Graph -->
-<meta property="og:title" content="Consolidado de Pagos · JAVZ">
-<meta property="og:description" content="Procesador automático de ZIPs bancarios → Excel consolidado. 100% web.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/">
-<meta property="og:image" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/og-cover.png">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Consolidado de Pagos · JAVZ">
+  <meta property="og:description" content="Procesador automático de ZIPs bancarios → Excel consolidado. 100% web.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/">
+  <meta property="og:image" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/og-cover.png">
 
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Consolidado de Pagos · JAVZ">
-<meta name="twitter:description" content="Procesa ZIPs bancarios y genera Excel automáticamente. 100% web.">
-<meta name="twitter:image" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/og-cover.png">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Consolidado de Pagos · JAVZ">
+  <meta name="twitter:description" content="Procesa ZIPs bancarios y genera Excel automáticamente. 100% web.">
+  <meta name="twitter:image" content="https://compensacionesspsa.github.io/ConsolidadoDePagos/og-cover.png">
 
   <!-- Robots -->
   <meta name="robots" content="index,follow">
 
-  <!-- Marca y PWA -->
+  <!-- Marca y PWA (mantiene tu favicon actual) -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="theme-color" content="#0e2a47">
   <link rel="manifest" href="manifest.webmanifest">
-  
-  <script>
-  (function(v){
-    var m = document.querySelector('link[rel="manifest"]');
-    if (m) m.href = m.href + (m.href.includes('?') ? '&' : '?') + 'v=' + v;
-  })(Date.now());
-</script>
 
-<!-- Librerías con cache-busting simple -->
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js?v=20250929"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?v=20250929"></script>
+  <!-- Evita caché del manifest -->
+  <script>
+    (function(v){
+      var m = document.querySelector('link[rel="manifest"]');
+      if (m) m.href = m.href + (m.href.includes('?') ? '&' : '?') + 'v=' + v;
+    })(Date.now());
+  </script>
+
+  <!-- Librerías con cache-busting simple -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js?v=20250929"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?v=20250929"></script>
 
   <style>
     :root{
@@ -64,6 +65,9 @@
     .callout h3{margin:0 0 6px; font-size:16px}
     .callout ol{margin:0 0 0 18px; padding:0}
 
+    .trust{display:flex; align-items:center; gap:8px; justify-content:center; color:#5270a8; font-size:13px; margin:6px 0 14px}
+    .trust .lock{font-size:14px}
+
     .actions{display:flex; justify-content:center; margin:16px 0}
     .btn{appearance:none; border:0; cursor:pointer; padding:12px 18px; border-radius:999px; font-weight:700; color:#fff; box-shadow:0 6px 16px rgba(47,109,246,.3); min-height:44px;}
     .btn-primary{background:linear-gradient(135deg, var(--brand), var(--brand2))}
@@ -71,8 +75,9 @@
     .btn:disabled{opacity:.6; cursor:not-allowed}
     .btn:focus, .dropzone:focus-within { outline: 3px solid #7a5cff55; outline-offset: 2px; border-radius: 12px; }
 
-    .dropzone{position:relative; background:var(--card); border:2px dashed var(--dash); border-radius:14px; min-height:150px; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px; color:var(--muted)}
-    .dropzone.hover{background:#f4f7ff}
+    .dropzone{position:relative; background:var(--card); border:2px dashed var(--dash); border-radius:14px; min-height:150px; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px; color:var(--muted); transition:box-shadow .2s, border-color .2s, background .2s}
+    .dropzone.hover{background:#f4f7ff; border-color:var(--brand)}
+    .dropzone.success{border-color:var(--ok); box-shadow:0 0 0 3px rgba(16,185,129,.25) inset; background:#effcf7}
     .dropzone .folder{font-size:30px; display:block; margin-bottom:8px}
     .dropzone input[type=file].overlay{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%}
 
@@ -95,7 +100,7 @@
                    border:1px dashed var(--dash); border-radius:999px; padding:6px 10px;
                    font-size:13px; font-weight:700; width:fit-content; margin:6px auto 0}
 
-    /* ——— MODO OSCURO AUTOMÁTICO (no rompe tu paleta) ——— */
+    /* Modo oscuro */
     @media (prefers-color-scheme: dark){
       :root{ --bg:#0b1220; --ink:#e7ecf8; --muted:#a9b6d3; --card:#0f1a2d; --dash:#4a67b6; }
       header{ background: linear-gradient(180deg, #0b284a, #0a1f3b); }
@@ -103,6 +108,7 @@
       .callout{ background:#0f1f3f; border-color:#2a4ea3; color:#d7e3ff; }
       .btn.secondary{ background:#132646; color:#cfe0ff; border-color:#3d66da; }
       .sel-indicator{ background:#101e3a; color:#d7e3ff; border-color:#4a67b6; }
+      .trust{ color:#a9c0ff; }
     }
   </style>
 </head>
@@ -131,13 +137,16 @@
           Necesitas habilitar JavaScript para procesar y renombrar ZIPs.
         </div>
       </noscript>
-      
+
       <div class="actions">
         <label for="file" class="btn btn-primary">📂 Seleccionar Archivos ZIP</label>
         <input id="file" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple style="display:none" />
       </div>
 
-      <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí">
+      <!-- Nota de seguridad -->
+      <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
+
+      <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí" aria-label="Zona para arrastrar y soltar archivos ZIP">
         <input id="file-overlay" class="overlay" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple />
         <div>
           <span class="folder">📁</span>
@@ -159,7 +168,7 @@
         </div>
       </div>
 
-      <div id="status" class="status">
+      <div id="status" class="status" role="status">
         Proc. 1: Trabajador, Nombres, Cuenta, Moneda,Monto, Lote, Fecha, Banco.<br>
         Proc. 2: Renombra y <b>Guarda Localmente</b> (pregunta carpeta en cada ejecución).
       </div>
@@ -167,7 +176,7 @@
   </main>
 
   <footer style="text-align:center; color:#6b7a99; font-size:12px; margin:30px 0 18px">
-    © 2025 JAVZ · Todos los derechos reservados · Versión 1.0.0
+    © 2025 JAVZ · Todos los derechos reservados · <span id="version">Versión</span>
   </footer>
 
   <script>
@@ -207,6 +216,9 @@
       selIndicator.style.display='inline-flex';
       selIndicator.textContent = `${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}`;
       setStatus(`${n} ${n===1?'ZIP seleccionado':'ZIPs seleccionados'}.`, 'ok');
+      // Feedback visual en la dropzone
+      drop.classList.add('success');
+      setTimeout(()=> drop.classList.remove('success'), 800);
     }else{
       selIndicator.style.display='none';
       selIndicator.textContent='';
@@ -332,7 +344,7 @@
 
     let startR=-1; const lastR=rows.length;
     for(let r=headerRow+1; r<lastR; r++){
-      const b=rows[r]?.[cBenef]; const cta=rows[r]?.[cCta]; const mto=rows[r]?.[cMto]; const est=(cEst>=0?rows[r]?.[cEst]:'');
+      const b=rows[r]?.[cBenef]; const cta=rows[r]?.[cCta]; const mto=rows[r]?.[cMto]; const est=(cEst>=0?rows[r]?.[cEst]:'' );
       if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''))){ startR=r; break; }
     }
     if(startR<0) return [];
@@ -407,7 +419,6 @@
     }
   }
 
-  // === Elegir carpeta en CADA ejecución ===
   async function pickDirectoryThisRun(){
     if('showDirectoryPicker' in window){
       try{ return await window.showDirectoryPicker({id:'zip-output'}); }
@@ -427,7 +438,6 @@
     enableUI(false); downloadEl.style.display='none';
     showIndicator(selectedFiles.length, 'Renombrando');
 
-    // Siempre preguntar carpeta al iniciar el renombrado
     const dirHandle = await pickDirectoryThisRun();
     const useDir = !!dirHandle;
 
@@ -438,7 +448,7 @@
       updateIndicator(i+1, selectedFiles.length);
 
       const info = await extraerLoteFechaDeZip(f);
-      const newName = info ? `${info.lote}_${info.fecha8} IBK.zip` : f.name;
+      const newName = info ? `${info.lote}_${info.fecha8} ${BANCO_FIJO}.zip` : f.name;
       if(info) renombrados++; else sinCambios++;
 
       if(useDir){
@@ -446,7 +456,6 @@
           await saveZipToDir(dirHandle, newName, f);
           guardadosLocal++;
         }catch{
-          // Fallback por si falla el FS Access
           const url = URL.createObjectURL(f);
           const a = document.createElement('a');
           a.href = url; a.download = newName;
@@ -455,7 +464,6 @@
           viaDescarga++;
         }
       }else{
-        // Fallback: descarga tradicional
         const url = URL.createObjectURL(f);
         const a = document.createElement('a');
         a.href = url; a.download = newName;
@@ -476,7 +484,7 @@
     setStatus(msg, 'ok');
   }
 
-  // ===== Indicador (común) =====
+  // ===== Indicador =====
   function showIndicator(total, label='Procesando'){
     indicatorLabel = label;
     if(!total){ procIndicator.style.display='none'; return; }
@@ -548,10 +556,16 @@
   document.getElementById('btn').addEventListener('click', runConsolidado);
   btnRename.addEventListener('click', renombrarYDescargarZIPs);
 
-  // Alerta visible si las libs no cargan (tu status ya lo muestra; esto es extra)
   if(!window.XLSX || !window.JSZip){
     alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pídenos la versión offline.');
   }
+
+  // Footer: versión dinámica (fecha YYYY-MM-DD)
+  (function(){
+    const d = new Date().toISOString().slice(0,10);
+    const vEl = document.getElementById('version');
+    if(vEl) vEl.textContent = 'Versión ' + d;
+  })();
   </script>
 
   <!-- Métricas (privado, sin cookies) -->
