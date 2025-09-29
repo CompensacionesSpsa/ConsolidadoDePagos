@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <!-- Anti-caché básico -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+
   <title>Consolidado de Pagos · 100% Web</title>
 
   <!-- SEO básico -->
@@ -32,17 +34,8 @@
   <!-- Marca y PWA (mantiene tu favicon actual) -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="theme-color" content="#0e2a47">
-  <link rel="manifest" href="manifest.webmanifest">
 
-  <!-- Evita caché del manifest -->
-  <script>
-    (function(v){
-      var m = document.querySelector('link[rel="manifest"]');
-      if (m) m.href = m.href + (m.href.includes('?') ? '&' : '?') + 'v=' + v;
-    })(Date.now());
-  </script>
-
-  <!-- Librerías con cache-busting simple -->
+  <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js?v=20250929"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?v=20250929"></script>
 
@@ -80,13 +73,12 @@
     .dropzone.success{border-color:var(--ok); box-shadow:0 0 0 3px rgba(16,185,129,.25) inset; background:#effcf7}
     .dropzone .folder{font-size:30px; display:block; margin-bottom:8px}
 
-    .grid-ctn{display:grid; gap:18px}
     .filelist{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px}
     .pill{background:#eef3ff; border:1px dashed var(--dash); color:#334; padding:6px 10px; border-radius:999px; font-size:12px}
 
     .footer-actions{display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; margin-top:16px}
     #download{display:none}
-    .status{margin-top:12px; color:var(--muted); text-align:center}
+    .status{margin-top:12px; color:#6b7a99; text-align:center}
     .ok{color:var(--ok)} .warn{color:var(--warn)} .error{color:var(--error)}
 
     .indicator{display:none; align-items:center; gap:8px; background:#fff; color:#1f49d8;
@@ -120,56 +112,53 @@
     </div>
   </header>
 
-  <main>
-    <div class="grid-ctn">
-      <section class="callout">
-        <h3>📋 Instrucciones:</h3>
-        <ol>
-          <li>Selecciona o arrastra tus archivos ZIP del banco</li>
-          <li>Proc. 1: <strong>Procesar Archivos</strong> → Excel consolidado</li>
-          <li>Proc. 2: <strong>Renombrar ZIPs</strong> → ZIP con nombre <code>LOTE_FECHA IBK.zip</code></li>
-        </ol>
-      </section>
+  <main class="wrap">
+    <section class="callout">
+      <h3>📋 Instrucciones:</h3>
+      <ol>
+        <li>Selecciona o arrastra tus archivos ZIP del banco.</li>
+        <li>Proc. 1: <strong>Procesar Archivos</strong> → Excel consolidado.</li>
+        <li>Proc. 2: <strong>Renombrar ZIPs</strong> → ZIP con nombre <code>LOTE_FECHA IBK.zip</code> (elige carpeta en cada ejecución).</li>
+      </ol>
+    </section>
 
-      <noscript>
-        <div class="callout" style="margin-top:-6px">
-          Necesitas habilitar JavaScript para procesar y renombrar ZIPs.
-        </div>
-      </noscript>
-
-      <div class="actions">
-        <label for="file" class="btn btn-primary">📂 Seleccionar Archivos ZIP</label>
-        <input id="file" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple style="display:none" />
+    <noscript>
+      <div class="callout" style="margin-top:-6px">
+        Necesitas habilitar JavaScript para procesar y renombrar ZIPs.
       </div>
+    </noscript>
 
-      <!-- Nota de seguridad -->
-      <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
+    <div class="actions">
+      <label for="file" class="btn btn-primary">📂 Seleccionar Archivos ZIP</label>
+      <input id="file" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple style="display:none" />
+    </div>
 
-      <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí" aria-label="Zona para arrastrar y soltar archivos ZIP">
-        <div>
-          <span class="folder">📁</span>
-          <div>Arrastra y suelta archivos ZIP aquí (o haz clic)</div>
-        </div>
-      </section>
+    <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
 
-      <ul id="filelist" class="filelist"></ul>
-      <div id="selIndicator" class="sel-indicator">0 ZIPs seleccionados</div>
-
-      <div class="footer-actions">
-        <button id="btn" class="btn btn-primary">🚀 Procesar Archivos</button>
-        <button id="btn-rename" class="btn btn-primary">📝 Renombrar ZIPs</button>
-        <button id="clear" class="btn secondary">🧹 Limpiar</button>
-        <a id="download" class="btn secondary" href="#" download>⬇️ Descargar resultado</a>
-        <div id="procIndicator" class="indicator" aria-live="polite">
-          <span class="spin" aria-hidden="true"></span>
-          <span id="procText">Procesando 0/0 ZIPs</span>
-        </div>
+    <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí" aria-label="Zona para arrastrar y soltar archivos ZIP">
+      <div>
+        <span class="folder">📁</span>
+        <div>Arrastra y suelta archivos ZIP aquí (o haz clic)</div>
       </div>
+    </section>
 
-      <div id="status" class="status" role="status">
-        Proc. 1: Trabajador, Nombres, Cuenta, Moneda,Monto, Lote, Fecha, Banco.<br>
-        Proc. 2: Renombra y <b>Guarda Localmente</b> (pregunta carpeta en cada ejecución).
+    <ul id="filelist" class="filelist"></ul>
+    <div id="selIndicator" class="sel-indicator">0 ZIPs seleccionados</div>
+
+    <div class="footer-actions">
+      <button id="btn" class="btn btn-primary">🚀 Procesar Archivos</button>
+      <button id="btn-rename" class="btn btn-primary">📝 Renombrar ZIPs</button>
+      <button id="clear" class="btn secondary">🧹 Limpiar</button>
+      <a id="download" class="btn secondary" href="#" download>⬇️ Descargar resultado</a>
+      <div id="procIndicator" class="indicator" aria-live="polite">
+        <span class="spin" aria-hidden="true"></span>
+        <span id="procText">Procesando 0/0 ZIPs</span>
       </div>
+    </div>
+
+    <div id="status" class="status" role="status">
+      Proc. 1: Trabajador, Nombres, Cuenta, Moneda, Monto, Lote, Fecha, Banco.<br>
+      Proc. 2: Renombra y <b>guarda localmente</b> (pregunta carpeta en cada ejecución).
     </div>
   </main>
 
@@ -187,7 +176,6 @@
   const clearBtn    = document.getElementById('clear');
   const statusEl    = document.getElementById('status');
   const downloadEl  = document.getElementById('download');
-
   const procIndicator = document.getElementById('procIndicator');
   const procText      = document.getElementById('procText');
   const selIndicator  = document.getElementById('selIndicator');
@@ -217,7 +205,6 @@
       setTimeout(()=> drop.classList.remove('success'), 800);
     }else{
       selIndicator.style.display='none';
-      selIndicator.textContent='';
       setStatus('Listo para procesar o renombrar ZIPs.');
     }
   }
@@ -226,7 +213,7 @@
 
   function addFiles(files){
     const map = new Map(selectedFiles.map(f => [f.name+'|'+f.size, true]));
-    const incoming = [...files].filter(f => f && f.name && f.size && f.name.toLowerCase().endsWith('.zip'));
+    const incoming = [...files].filter(f => f && f.name && f.size && /\.zip$/i.test(f.name));
     let added = 0;
     for(const f of incoming){
       const key = f.name+'|'+f.size;
@@ -237,11 +224,11 @@
     if(incoming.length===0){ setStatus('Selecciona archivos con extensión .zip', 'warn'); }
   }
 
-  // DnD + selección
+  // Drag & drop + click sin duplicar el diálogo
   ['dragover','dragenter'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('hover'); }));
   ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('hover'); }));
-  drop.addEventListener('click', ()=> fileInput.click());
   drop.addEventListener('drop', e=> addFiles(e.dataTransfer.files));
+  drop.addEventListener('click', ()=> fileInput.click());  // un solo input para evitar doble apertura
   fileInput.addEventListener('change', e=>{ addFiles(e.target.files); fileInput.value=''; });
 
   clearBtn.addEventListener('click', ()=>{
@@ -291,7 +278,7 @@
         }
         if(t.includes('datos de cargo')){
           let texto=''; for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
-          if(!texto y r+1<rows.length){
+          if(!texto && r+1<rows.length){
             for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
           }
           if(texto){ moneda_default = normaliza(texto).includes('soles') ? 'Soles' : 'Dólares'; }
@@ -307,11 +294,11 @@
       for(let c=0;c<row.length;c++){
         const t=normaliza(row[c]); if(!t) continue;
         if(cBenef<0 && t.includes('beneficiario')) cBenef=c;
-        if(cCta  <0 y t.includes('cuenta'))       cCta=c;
-        if(cMto  <0 y t.includes('monto'))        cMto=c;
-        if(cEst  <0 y t.includes('estado'))       cEst=c;
+        if(cCta  <0 && t.includes('cuenta'))       cCta=c;
+        if(cMto  <0 && t.includes('monto'))        cMto=c;
+        if(cEst  <0 && t.includes('estado'))       cEst=c;
       }
-      if(cBenef>=0 y cCta>=0 y cMto>=0){ return {headerRow:r, cBenef, cCta, cMto, cEst}; }
+      if(cBenef>=0 && cCta>=0 && cMto>=0){ return {headerRow:r, cBenef, cCta, cMto, cEst}; }
     }
     return {headerRow:25, cBenef:2, cCta:13, cMto:17, cEst:22};
   }
@@ -353,7 +340,7 @@
       const mto  =String(row[cMto]??'').trim();
       const est  =cEst>=0? String(row[cEst]??'').trim(): '';
 
-      if(!benef && !cta y !mto y !est){ vacias++; if(vacias>=20) break; else continue; } else { vacias=0; }
+      if(!benef && !cta && !mto && !est){ vacias++; if(vacias>=20) break; else continue; } else { vacias=0; }
 
       const {nombre,id}=parseBenef(benef);
       out.push([
@@ -405,7 +392,7 @@
         if(!fecha && fecha_envio) fecha = fecha_envio;
         if(lote && fecha) break;
       }
-      if(!lote y !fecha) return null;
+      if(!lote && !fecha) return null;
       const loteOk = sanitizeFilename(lote || 'SIN_LOTE');
       const fecha8 = (fecha||'').replace(/\D/g,'').padEnd(8,'0').slice(0,8);
       return { lote: loteOk, fecha8 };
@@ -476,7 +463,7 @@
     const msg =
       `Renombrado: ${renombrados} con nuevo nombre, ${sinCambios} sin cambios. ` +
       (guardadosLocal ? `Guardados en carpeta: ${guardadosLocal}. ` : '') +
-      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.`);
+      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.` : '');
     setStatus(msg, 'ok');
   }
 
@@ -553,11 +540,11 @@
   btnRename.addEventListener('click', renombrarYDescargarZIPs);
 
   if(!window.XLSX || !window.JSZip){
-    alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pídenos la versión offline.');
+    alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pide la versión offline.');
   }
   </script>
 
-  <!-- Métricas (privado, sin cookies) -->
+  <!-- Métricas (opcional) -->
   <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
   <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
 </body>
