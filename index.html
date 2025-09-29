@@ -41,13 +41,9 @@
   })(Date.now());
 </script>
 
-<!-- Carga libs con versión dinámica (anti-caché) -->
-<script>
-  (function(v){
-    document.write('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js?v='+v+'"><\\/script>');
-    document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?v='+v+'"><\\/script>');
-  })(Date.now());
-</script>
+<!-- Librerías con cache-busting simple -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js?v=20250929"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?v=20250929"></script>
 
   <style>
     :root{
