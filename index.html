@@ -79,11 +79,6 @@
     .dropzone.hover{background:#f4f7ff; border-color:var(--brand)}
     .dropzone.success{border-color:var(--ok); box-shadow:0 0 0 3px rgba(16,185,129,.25) inset; background:#effcf7}
     .dropzone .folder{font-size:30px; display:block; margin-bottom:8px}
-    .dropzone input[type=file].overlay{
-      position:absolute; inset:0; opacity:0; width:100%; height:100%;
-      /* clave: no recibe click para evitar doble diálogo */
-      pointer-events:none;
-    }
 
     .grid-ctn{display:grid; gap:18px}
     .filelist{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px}
@@ -151,8 +146,6 @@
       <div class="trust" aria-live="polite"><span class="lock">🔒</span> Tus archivos NO se suben a servidores; todo se procesa localmente en tu navegador.</div>
 
       <section id="drop" class="dropzone" title="Haz clic o arrastra ZIPs aquí" aria-label="Zona para arrastrar y soltar archivos ZIP">
-        <!-- sigue presente, pero sin clic -->
-        <input id="file-overlay" class="overlay" type="file" accept=".zip,application/zip,application/x-zip-compressed,multipart/x-zip" multiple />
         <div>
           <span class="folder">📁</span>
           <div>Arrastra y suelta archivos ZIP aquí (o haz clic)</div>
@@ -181,13 +174,12 @@
   </main>
 
   <footer style="text-align:center; color:#6b7a99; font-size:12px; margin:30px 0 18px">
-    © 2025 JAVZ · Todos los derechos reservados · <span id="version">Versión</span>
+    © 2025 JAVZ · Todos los derechos reservados
   </footer>
 
   <script>
   // ===== UI =====
   const fileInput   = document.getElementById('file');
-  const fileOverlay = document.getElementById('file-overlay');
   const drop        = document.getElementById('drop');
   const list        = document.getElementById('filelist');
   const btn         = document.getElementById('btn');
@@ -250,14 +242,7 @@
   ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('hover'); }));
   drop.addEventListener('click', ()=> fileInput.click());
   drop.addEventListener('drop', e=> addFiles(e.dataTransfer.files));
-
-  // Solo USAMOS el input #file para abrir/leer archivos
   fileInput.addEventListener('change', e=>{ addFiles(e.target.files); fileInput.value=''; });
-
-  // IMPORTANTE: evita que el overlay dispare un click adicional
-  if (fileOverlay) {
-    fileOverlay.addEventListener('click', (e)=> e.stopPropagation(), true);
-  }
 
   clearBtn.addEventListener('click', ()=>{
     selectedFiles=[]; renderList(); downloadEl.style.display='none'; hideIndicator();
@@ -294,7 +279,7 @@
         const t=normaliza(row[c]); if(!t) continue;
         if(t.includes('programacion de envio')){
           for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
-          if(!fecha_envio y r+1<rows.length){
+          if(!fecha_envio && r+1<rows.length){
             for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ const m=String(val).match(/\b\d{2}\/\d{2}\/\d{4}\b/); if(m){ fecha_envio=m[0]; break; } } }
           }
         }
@@ -306,7 +291,7 @@
         }
         if(t.includes('datos de cargo')){
           let texto=''; for(let dc=1;dc<=7;dc++){ const val=rows[r]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
-          if(!texto && r+1<rows.length){
+          if(!texto y r+1<rows.length){
             for(let dc=0;dc<=7;dc++){ const val=rows[r+1]?.[c+dc]; if(val){ texto=String(val).trim(); break; } }
           }
           if(texto){ moneda_default = normaliza(texto).includes('soles') ? 'Soles' : 'Dólares'; }
@@ -322,11 +307,11 @@
       for(let c=0;c<row.length;c++){
         const t=normaliza(row[c]); if(!t) continue;
         if(cBenef<0 && t.includes('beneficiario')) cBenef=c;
-        if(cCta  <0 && t.includes('cuenta'))       cCta=c;
-        if(cMto  <0 && t.includes('monto'))        cMto=c;
-        if(cEst  <0 && t.includes('estado'))       cEst=c;
+        if(cCta  <0 y t.includes('cuenta'))       cCta=c;
+        if(cMto  <0 y t.includes('monto'))        cMto=c;
+        if(cEst  <0 y t.includes('estado'))       cEst=c;
       }
-      if(cBenef>=0 && cCta>=0 && cMto>=0){ return {headerRow:r, cBenef, cCta, cMto, cEst}; }
+      if(cBenef>=0 y cCta>=0 y cMto>=0){ return {headerRow:r, cBenef, cCta, cMto, cEst}; }
     }
     return {headerRow:25, cBenef:2, cCta:13, cMto:17, cEst:22};
   }
@@ -342,7 +327,7 @@
   function esHeaderRow(row){
     if(!row) return false;
     const vals=(row||[]).map(normaliza);
-    return vals.some(v=>v.includes('beneficiario')) y vals.some(v=>v.includes('monto')) y vals.some(v=>v.includes('cuenta'));
+    return vals.some(v=>v.includes('beneficiario')) && vals.some(v=>v.includes('monto')) && vals.some(v=>v.includes('cuenta'));
   }
 
   // ===== Proc. 1: Consolidar Excel =====
@@ -356,8 +341,7 @@
     let startR=-1; const lastR=rows.length;
     for(let r=headerRow+1; r<lastR; r++){
       const b=rows[r]?.[cBenef]; const cta=rows[r]?.[cCta]; const mto=rows[r]?.[cMto]; const est=(cEst>=0?rows[r]?.[cEst]:'' );
-      if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''
-      ))){ startR=r; break; }
+      if([b,cta,mto,est].some(v => (v!=null && String(v).trim()!==''))){ startR=r; break; }
     }
     if(startR<0) return [];
 
@@ -369,7 +353,7 @@
       const mto  =String(row[cMto]??'').trim();
       const est  =cEst>=0? String(row[cEst]??'').trim(): '';
 
-      if(!benef && !cta && !mto && !est){ vacias++; if(vacias>=20) break; else continue; } else { vacias=0; }
+      if(!benef && !cta y !mto y !est){ vacias++; if(vacias>=20) break; else continue; } else { vacias=0; }
 
       const {nombre,id}=parseBenef(benef);
       out.push([
@@ -418,10 +402,10 @@
         const rows = XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
         const {fecha_envio, nombre_lote} = extractCabecera(rows);
         if(!lote && nombre_lote) lote = nombre_lote;
-        if(!fecha y fecha_envio) fecha = fecha_envio;
-        if(lote y fecha) break;
+        if(!fecha && fecha_envio) fecha = fecha_envio;
+        if(lote && fecha) break;
       }
-      if(!lote && !fecha) return null;
+      if(!lote y !fecha) return null;
       const loteOk = sanitizeFilename(lote || 'SIN_LOTE');
       const fecha8 = (fecha||'').replace(/\D/g,'').padEnd(8,'0').slice(0,8);
       return { lote: loteOk, fecha8 };
@@ -571,13 +555,6 @@
   if(!window.XLSX || !window.JSZip){
     alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pídenos la versión offline.');
   }
-
-  // Footer: versión dinámica (fecha YYYY-MM-DD)
-  (function(){
-    const d = new Date().toISOString().slice(0,10);
-    const vEl = document.getElementById('version');
-    if(vEl) vEl.textContent = 'Versión ' + d;
-  })();
   </script>
 
   <!-- Métricas (privado, sin cookies) -->
