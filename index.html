@@ -175,8 +175,9 @@
     </div>
   </main>
 
+  <!-- FOOTER con fecha automática -->
   <footer style="text-align:center; color:#6b7a99; font-size:12px; margin:30px 0 18px">
-    © 2025 JAVZ · Todos los derechos reservados · <span id="version">Versión</span>
+    © 2025 JAVZ · Todos los derechos reservados · <b>Versión 1.0.0</b> · Actualizado: <span id="lastUpdate"></span>
   </footer>
 
   <script>
@@ -351,7 +352,8 @@
 
     const out=[]; let vacias=0;
     for(let r=startR; r<lastR; r++){
-      const row=rows[r]||[]; if(esHeaderRow(row)) break;
+      const row=rows[r]||[];
+      if(esHeaderRow(row)) break;
       const benef=String(row[cBenef]??'').trim();
       const cta  =String(row[cCta]??'').trim();
       const mto  =String(row[cMto]??'').trim();
@@ -480,7 +482,7 @@
     const msg =
       `Renombrado: ${renombrados} con nuevo nombre, ${sinCambios} sin cambios. ` +
       (guardadosLocal ? `Guardados en carpeta: ${guardadosLocal}. ` : '') +
-      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.` : '');
+      (viaDescarga ? `Descargados por navegador: ${viaDescarga}.`);
     setStatus(msg, 'ok');
   }
 
@@ -560,11 +562,11 @@
     alert('No se cargaron las librerías (XLSX/JSZip). Si tu red bloquea CDNs, pídenos la versión offline.');
   }
 
-  // Footer: versión dinámica (fecha YYYY-MM-DD)
+  // Footer: fecha automática (YYYY-MM-DD)
   (function(){
     const d = new Date().toISOString().slice(0,10);
-    const vEl = document.getElementById('version');
-    if(vEl) vEl.textContent = 'Versión ' + d;
+    const el = document.getElementById('lastUpdate');
+    if(el) el.textContent = d;
   })();
   </script>
 
